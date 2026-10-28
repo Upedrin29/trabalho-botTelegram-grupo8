@@ -93,7 +93,7 @@ def main() -> None:
 
     # Validação prévia de token
     token = args.token or os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token or token == "seu_token_aqui_sem_aspas" or not token.strip():
+    if not token or not token.strip():
         print("\n" + "=" * 70)
         print(" ATENÇÃO: TOKEN DO TELEGRAM NÃO CONFIGURADO!")
         print("\n DICA: Você pode validar todo o funcionamento dos modelos de IA localmente")
