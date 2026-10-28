@@ -244,7 +244,7 @@ class BotImagem(BotTelegram):
             elif msg.document and msg.document.mime_type and msg.document.mime_type.startswith("image/"):
                 foto = msg.document
             else:
-                await status_msg.edit_text("❌ Nenhuma imagem válida detectada no arquivo.")
+                await status_msg.edit_text("Nenhuma imagem válida detectada no arquivo.")
                 return
 
             arquivo_telegram = await context.bot.get_file(foto.file_id)
@@ -259,7 +259,7 @@ class BotImagem(BotTelegram):
 
  
             if imagem_bgr is None:
-                await status_msg.edit_text("❌ Falha ao decodificar os pixels da imagem.")
+                await status_msg.edit_text("Falha ao decodificar os pixels da imagem.")
                 return
 
             # Executa inferência e anotação
@@ -269,7 +269,7 @@ class BotImagem(BotTelegram):
             sucesso, buffer_codificado = cv2.imencode(".jpg", imagem_anotada, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
 
             if not sucesso:
-                await status_msg.edit_text("❌ Erro ao codificar imagem resultante.")
+                await status_msg.edit_text("Erro ao codificar imagem resultante.")
                 return
 
             foto_para_envio = io.BytesIO(buffer_codificado.tobytes())        # Cria um arquivo virtual e dá um nome a ele (o Telegram precisa disso para reconhecer o formato).
@@ -291,7 +291,7 @@ class BotImagem(BotTelegram):
 
         except Exception as erro:
             logger.exception("Erro durante o processamento da imagem: %s", erro)
-            await status_msg.edit_text(f"❌ Ocorreu um erro ao processar a imagem:\n`{str(erro)}`", parse_mode="Markdown")
+            await status_msg.edit_text(f"Ocorreu um erro ao processar a imagem:\n`{str(erro)}`", parse_mode="Markdown")
 
 
 
@@ -308,18 +308,18 @@ class BotImagem(BotTelegram):
 
         if total == 0:
             return (
-                f"🎯 *Resultado da Análise Visual (YOLOv8)*\n\n"
-                f"ℹ️ Nenhum objeto com confiança acima de `{self._confianca_minima * 100:.0f}%` "
+                f"*Resultado da Análise Visual (YOLOv8)*\n\n"
+                f"ℹ Nenhum objeto com confiança acima de `{self._confianca_minima * 100:.0f}%` "
                 f"foi detectado na imagem.\n"
-                f"⏱️ Tempo de inferência: `{tempo:.1f}ms`"
+                f" Tempo de inferência: `{tempo:.1f}ms`"
             )
 
         linhas = [
-            f"🎯 *Classificação e Detecção de Imagem (YOLOv8)*",
+            f"*Classificação e Detecção de Imagem (YOLOv8)*",
             f"• **Total de Objetos Detectados:** `{total}`",
             f"• **Tempo de Inferência:** `{tempo:.1f}ms`",
             f"• **Resolução:** `{relatorio['resolucao']}`\n",
-            "📋 *Classes Identificadas:*",
+            "*Classes Identificadas:*",
         ]
 
         for classe, qtd in sorted(classes.items(), key=lambda item: item[1], reverse=True):

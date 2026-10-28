@@ -211,7 +211,7 @@ class TestePolimorfismoDespacho(unittest.TestCase):
 def executar_testes():
     """Executa a suíte completa de testes com relatório formatado."""
     print("\n" + "=" * 65)
-    print("🧪 INICIANDO TESTES LOCAIS DO BOT TELEGRAM COM IA")
+    print("INICIANDO TESTES LOCAIS DO BOT TELEGRAM COM IA")
     print("=" * 65)
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
@@ -225,10 +225,10 @@ def executar_testes():
 
     print("=" * 65)
     if resultado.wasSuccessful():
-        print("✅ TODOS OS TESTES PASSARAM COM SUCESSO!")
+        print("TODOS OS TESTES PASSARAM COM SUCESSO!")
         return 0
     else:
-        print("❌ ALGUNS TESTES FALHARAM. VERIFIQUE OS LOGS ACIMA.")
+        print("ALGUNS TESTES FALHARAM. VERIFIQUE OS LOGS ACIMA.")
         return 1
 
 

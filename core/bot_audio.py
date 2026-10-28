@@ -101,11 +101,11 @@ class ClassificadorTextoAudio:
 
         score_sentimento = len(positivas_encontradas) - len(negativas_encontradas)
         if score_sentimento > 0:
-            sentimento = "Positivo 😊"
+            sentimento = "Positivo"
         elif score_sentimento < 0:
-            sentimento = "Negativo 😟"
+            sentimento = "Negativo"
         else:
-            sentimento = "Neutro / Informativo 😐"
+            sentimento = "Neutro / Informativo"
 
 
         # 2. Classificação de Intenção
@@ -351,16 +351,16 @@ class BotAudio(BotTelegram):
         cls_info = resultado["classificacao"]
 
         linhas = [
-            "🎙️ *Transcrição e Classificação de Áudio*",
+            " *Transcrição e Classificação de Áudio*",
             "",
-            f"📝 *Transcrição do Áudio:*",
+            f" *Transcrição do Áudio:*",
             f"> \"_{transcricao}_\"",
             "",
-            "🧠 *Classificação Semântica com IA:*",
+            " *Classificação Semântica com IA:*",
             f"• **Sentimento:** `{cls_info['sentimento']}`",
             f"• **Intenção Identificada:** `{cls_info['categoria_intencao']}`",
             "",
-            "📊 *Métricas Fonéticas e do Áudio:*",
+            " *Métricas Fonéticas e do Áudio:*",
             f"• **Duração:** `{duracao:.1f} segundos`",
             f"• **Total de Palavras:** `{cls_info['total_palavras']}`",
             f"• **Velocidade de Fala:** `{cls_info['ritmo_fala_wpm']} palavras/min`",

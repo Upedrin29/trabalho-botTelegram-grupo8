@@ -67,19 +67,19 @@ class BotMultimodal(BotImagem, BotAudio):
         """Comando /vision: Detalha o modelo de Visão Computacional e classes detectáveis."""
 
         mensagem = (
-            "👁️ *Central de Visão Computacional (YOLOv8 & OpenCV)*\n\n"
+            "*Central de Visão Computacional (YOLOv8 & OpenCV)*\n\n"
             f"• **Modelo Ativo:** `{self._modelo_yolo_nome}`\n"
             f"• **Limiar de Confiança:** `{self._confianca_minima * 100:.0f}%`\n"
             f"• **Pipeline:** Decodificação OpenCV -> Inferência YOLOv8 -> "
             f"Desenho de Caixas & Labels com OpenCV -> Codificação JPEG\n\n"
-            "📦 *Exemplos de Classes Detectáveis (Dataset COCO - 80 classes):*\n"
+            "*Exemplos de Classes Detectáveis (Dataset COCO - 80 classes):*\n"
             "• Pessoas, bicicletas, carros, motos, aviões, ônibus, trens, barcos;\n"
             "• Semáforos, placas de trânsito, hidrantes, bancos de parque;\n"
             "• Animais: pássaros, gatos, cachorros, cavalos, ovelhas, vacas, elefantes, ursos;\n"
             "• Objetos: mochilas, guarda-chuvas, garrafas, copos, garfos, facas, tigelas;\n"
             "• Alimentos: maçãs, bananas, sanduíches, laranjas, pizzas, bolos;\n"
             "• Móveis e Eletrônicos: cadeiras, sofás, camas, TVs, notebooks, mouses, celulares, micro-ondas, livros.\n\n"
-            "📸 *Basta enviar qualquer foto para ver o modelo em ação!*"
+            "*Basta enviar qualquer foto para ver o modelo em ação!*"
         )
         await update.message.reply_text(mensagem, parse_mode="Markdown")
 
@@ -90,12 +90,12 @@ class BotMultimodal(BotImagem, BotAudio):
         """Comando /voice: Detalha o motor de Áudio, Speech-to-Text e Classificador NLP."""
 
         mensagem = (
-            "🎙️ *Central de Reconhecimento de Fala & NLP*\n\n"
+            " *Central de Reconhecimento de Fala & NLP*\n\n"
             f"• **Idioma Ativo:** `{self._idioma}`\n"
             f"• **Conversor de Áudio:** PyDub com motor FFmpeg integrado\n"
             f"• **Engine Speech-to-Text:** SpeechRecognition (Google API / PCM 16kHz Mono)\n"
             f"• **Classificador Semântico:** Análise de Sentimento (Léxico pt-BR) e Intenção via RegEx/NLP\n\n"
-            "💡 *Como testar:*\n"
+            "*Como testar:*\n"
             "• Grave uma mensagem de voz no Telegram dizendo algo como:\n"
             "  - *\"Adorei esse bot, o atendimento foi excelente e muito rápido!\"* (Sentimento Positivo)\n"
             "  - *\"Estou com um erro grave no meu sistema, preciso de ajuda urgente!\"* (Suporte / Negativo)\n"
@@ -113,7 +113,7 @@ class BotMultimodal(BotImagem, BotAudio):
         mro_classes = [c.__name__ for c in self.__class__.__mro__ if c.__name__ not in ("object", "ABC")]
 
         mensagem = (
-            "🏛️ *Arquitetura Orientada a Objetos (POO):*\n\n"
+            "*Arquitetura Orientada a Objetos (POO):*\n\n"
             "1. **Herança e Hierarquia de Classes:**\n"
             "   `BotTelegram` (Base)\n"
             "      ├── `BotImagem` (Visão Computacional: YOLOv8 + OpenCV)\n"

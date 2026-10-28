@@ -174,7 +174,7 @@ class BotTelegram(ABC):
         Sobrescrito pelas classes especialistas em Visão Computacional.
         """
         await update.message.reply_text(
-            "📷 Imagem recebida! (Classe base BotTelegram: implementação de processamento de imagem não vinculada)."
+            " Imagem recebida! (Classe base BotTelegram: implementação de processamento de imagem não vinculada)."
         )
 
 
@@ -184,7 +184,7 @@ class BotTelegram(ABC):
         Sobrescrito pelas classes especialistas em Processamento de Fala/NLP.
         """
         await update.message.reply_text(
-            "🎙️ Áudio recebido! (Classe base BotTelegram: implementação de processamento de áudio não vinculada)."
+            " Áudio recebido! (Classe base BotTelegram: implementação de processamento de áudio não vinculada)."
         )
 
 
@@ -202,11 +202,11 @@ class BotTelegram(ABC):
         total_palavras = len(texto.split())
 
         resposta = (
-            f"💬 *Mensagem de Texto Recebida*\n\n"
+            f" *Mensagem de Texto Recebida*\n\n"
             f"• *Conteúdo:* \"_{texto}_\"\n"
             f"• *Contagem de Palavras:* `{total_palavras}`\n"
             f"• *Caracteres:* `{total_chars}`\n\n"
-            f"💡 *Experimente a Inteligência Artificial do Bot:*\n"
+            f" *Experimente a Inteligência Artificial do Bot:*\n"
             f"1. Envie uma *foto* para detectar e classificar objetos via **YOLOv8**.\n"
             f"2. Envie um *áudio de voz* para transcrição e análise de sentimento via **Speech-to-Text**!"
         )
@@ -218,7 +218,7 @@ class BotTelegram(ABC):
         """Trata formatos não suportados diretamente (stickers, contatos, etc.)."""
 
         await update.message.reply_text(
-            "⚠️ Formato não reconhecido para análise de IA. Por favor, envie uma *imagem*, *áudio de voz* ou *texto*.",
+            " Formato não reconhecido para análise de IA. Por favor, envie uma *imagem*, *áudio de voz* ou *texto*.",
             parse_mode="Markdown",
         )
 
@@ -237,14 +237,14 @@ class BotTelegram(ABC):
         nome = update.effective_user.first_name if update.effective_user else "Usuário"
 
         mensagem = (
-            f"🤖 *Olá, {nome}! Bem-vindo ao Bot Multimodal com IA!*\n\n"
+            f" *Olá, {nome}! Bem-vindo ao Bot Multimodal com IA!*\n\n"
             f"Eu sou um assistente inteligente desenvolvido em Python utilizando o paradigma de "
             f"*Programação Orientada a Objetos (POO)* com herança, encapsulamento e polimorfismo.\n\n"
-            f"✨ *Capacidades de Inteligência Artificial:*\n"
-            f"• 👁️ **Visão Computacional (YOLOv8 + OpenCV):** Envie fotos para detecção e classificação em tempo real.\n"
-            f"• 🎙️ **Reconhecimento de Fala (Speech-to-Text):** Envie mensagens de voz ou áudios para transcrição e classificação de sentimento.\n"
-            f"• 📝 **Análise de Texto:** Envie perguntas ou textos normais.\n\n"
-            f"📌 *Comandos Úteis:*\n"
+            f" *Capacidades de Inteligência Artificial:*\n"
+            f"•  **Visão Computacional (YOLOv8 + OpenCV):** Envie fotos para detecção e classificação em tempo real.\n"
+            f"•  **Reconhecimento de Fala (Speech-to-Text):** Envie mensagens de voz ou áudios para transcrição e classificação de sentimento.\n"
+            f"•  **Análise de Texto:** Envie perguntas ou textos normais.\n\n"
+            f" *Comandos Úteis:*\n"
             f"/help - Exibe instruções detalhadas de uso\n"
             f"/stats - Estatísticas de processamento do bot\n\n"
             f"Envie uma imagem ou grave um áudio para começar agora mesmo! 🚀"
@@ -256,16 +256,16 @@ class BotTelegram(ABC):
     async def comando_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handler do comando /help."""
         ajuda = (
-            f"📖 *Manual de Uso do Bot Multimodal:*\n\n"
-            f"1️⃣ **Detecção de Objetos em Fotos:**\n"
+            f" *Manual de Uso do Bot Multimodal:*\n\n"
+            f"1️ **Detecção de Objetos em Fotos:**\n"
             f"Envie qualquer fotografia (carros, pessoas, animais, objetos do cotidiano). "
             f"O modelo **YOLO** irá identificar cada elemento, desenhar as caixas delimitadoras coloridas "
             f"e retornar a imagem anotada junto com uma listagem das classes detectadas e nível de confiança.\n\n"
-            f"2️⃣ **Processamento de Áudio de Voz:**\n"
+            f"2️ **Processamento de Áudio de Voz:**\n"
             f"Grave um áudio de voz pelo Telegram ou encaminhe um arquivo de som. O bot converterá o formato "
             f"de compressão para áudio PCM, realizará o reconhecimento de fala em português e analisará o "
             f"conteúdo classificando o sentimento (Positivo, Neutro ou Negativo) e a intenção da mensagem.\n\n"
-            f"3️⃣ **Comandos:**\n"
+            f"3️ **Comandos:**\n"
             f"• `/start` - Reinicia a conversa e exibe a mensagem inicial\n"
             f"• `/help` - Exibe esta mensagem de ajuda\n"
             f"• `/stats` - Estatísticas de mensagens e métricas do sistema"
@@ -275,12 +275,12 @@ class BotTelegram(ABC):
     async def comando_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handler do comando /stats."""
         stats = (
-            f"📊 *Estatísticas de Execução do Bot:*\n\n"
-            f"• 📨 Total de Mensagens Processadas: `{self._total_mensagens_processadas}`\n"
-            f"• 📷 Imagens Analisadas (YOLO): `{self._total_imagens_processadas}`\n"
-            f"• 🎙️ Áudios Transcritos: `{self._total_audios_processados}`\n"
-            f"• 💬 Textos Recebidos: `{self._total_textos_processados}`\n"
-            f"• 🔒 Status do Token: `Protegido ({self.token_mascarado})`"
+            f" *Estatísticas de Execução do Bot:*\n\n"
+            f"•  Total de Mensagens Processadas: `{self._total_mensagens_processadas}`\n"
+            f"•  Imagens Analisadas (YOLO): `{self._total_imagens_processadas}`\n"
+            f"•  Áudios Transcritos: `{self._total_audios_processados}`\n"
+            f"•  Textos Recebidos: `{self._total_textos_processados}`\n"
+            f"•  Status do Token: `Protegido ({self.token_mascarado})`"
         )
         await update.message.reply_text(stats, parse_mode="Markdown")
 
