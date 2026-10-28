@@ -1,0 +1,7 @@
+python-telegram-bot>=20.0
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+SpeechRecognition>=3.10.0
+pydub>=0.25.1
+imageio-ffmpeg>=0.4.9
+python-dotenv>=1.0.0
