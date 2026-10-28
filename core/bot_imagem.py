@@ -22,6 +22,7 @@ logger = logging.getLogger("BotImagem")
 
 
 class BotImagem(BotTelegram):
+
     """
     Classe derivada de BotTelegram especializada no processamento de imagens.
     
@@ -30,13 +31,8 @@ class BotImagem(BotTelegram):
     e renderização visual de objetos.
     """
 
-    def __init__(
-        self,
-        token: Optional[str] = None,
-        modelo_yolo: str = "yolov8n.pt",
-        confianca_minima: float = 0.25,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self,token: Optional[str] = None,modelo_yolo: str = "yolov8n.pt",confianca_minima: float = 0.25,**kwargs: Any):
+
         """
         Inicializa o Bot de Imagem carregando o modelo YOLO.
         
@@ -44,48 +40,60 @@ class BotImagem(BotTelegram):
         :param modelo_yolo: Caminho ou identificador do modelo YOLO (padrão: 'yolov8n.pt').
         :param confianca_minima: Limiar de confiança para considerar uma detecção válida (0.0 a 1.0).
         """
+
         super().__init__(token=token, **kwargs)
+
         self._modelo_yolo_nome = modelo_yolo or os.getenv("YOLO_MODEL", "yolov8n.pt")
         self._confianca_minima = confianca_minima
         
         logger.info("Carregando modelo YOLO (%s)...", self._modelo_yolo_nome)
-        self._modelo = YOLO(self._modelo_yolo_nome)
+        self._modelo = YOLO(self._modelo_yolo_nome)                                 # Carrega o modelo na memória, uma única vez, na criação do bot.
+
         logger.info("Modelo YOLO inicializado com sucesso.")
 
         # Paleta de cores para desenhar caixas de classes distintas no OpenCV
-        self._cores_classes = self._gerar_paleta_cores(80)
+        self._cores_classes = self._gerar_paleta_cores(80)                         # Gera 80 cores, uma para cada classe do dataset COCO (o YOLOv8 padrão reconhece 80 classes: pessoa, carro, gato...).
+
+
 
     @staticmethod
-    def _gerar_paleta_cores(num_cores: int = 80) -> List[Tuple[int, int, int]]:
+    def _gerar_paleta_cores(num_cores: int = 80):
+
         """
         Gera uma paleta harmoniosa de cores BGR para distinguir visualmente classes no OpenCV.
         """
-        np.random.seed(42)  # Semente fixa para cores consistentes entre execuções
+
+        np.random.seed(42)     # Semente fixa para cores consistentes entre execuções (a classe “pessoa” terá sempre a mesma cor).
         cores = []
         for _ in range(num_cores):
-            b = int(np.random.randint(40, 240))
+            b = int(np.random.randint(40, 240))        # Valores de 40 a 240 evitam cores muito escuras ou estouradas.
             g = int(np.random.randint(40, 240))
             r = int(np.random.randint(40, 240))
             cores.append((b, g, r))
         return cores
 
-    def detectar_e_anotar(self, imagem_bgr: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
+
+
+    def detectar_e_anotar(self, imagem_bgr: np.ndarray):
+
         """
         Executa a inferência com YOLO na imagem e anota os resultados usando OpenCV.
         
         :param imagem_bgr: Matriz NumPy da imagem em formato BGR (padrão OpenCV).
         :return: Tupla com (imagem_anotada, relatorio_metricas).
         """
+
         inicio = time.perf_counter()
         
-        # Executa inferência YOLO
-        resultados = self._modelo.predict(
+        # Executa inferência YOLO analisa a imagem e devolve as detecções.
+        resultados = self._modelo.predict(        
             source=imagem_bgr,
             conf=self._confianca_minima,
             verbose=False,
         )
         
         tempo_ms = (time.perf_counter() - inicio) * 1000.0
+
         imagem_anotada = imagem_bgr.copy()
         
         resultado = resultados[0]
@@ -95,12 +103,13 @@ class BotImagem(BotTelegram):
         contagem_por_classe: Dict[str, int] = {}
         detalhes_deteccoes: List[Dict[str, Any]] = []
 
+
         if boxes is not None and len(boxes) > 0:
             for box in boxes:
-                cls_id = int(box.cls[0].item())
-                conf = float(box.conf[0].item())
-                coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
-                x1, y1, x2, y2 = map(int, coords)
+                cls_id = int(box.cls[0].item())                              # o número da classe; .item() extrai o valor puro de um tensor.
+                conf = float(box.conf[0].item())                             # a confiança (0 a 1).
+                coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]            # coordenadas [x1, y1, x2, y2] (canto superior esquerdo e inferior direito).
+                x1, y1, x2, y2 = map(int, coords)                            # converte para inteiros (pixels).
                 
                 nome_classe = nomes_classes.get(cls_id, f"classe_{cls_id}")
                 contagem_por_classe[nome_classe] = contagem_por_classe.get(nome_classe, 0) + 1
@@ -130,22 +139,17 @@ class BotImagem(BotTelegram):
             "resolucao": f"{imagem_bgr.shape[1]}x{imagem_bgr.shape[0]}",
         }
 
+
         return imagem_anotada, relatorio
 
-    def _desenhar_caixa_anotada(
-        self,
-        img: np.ndarray,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        rotulo: str,
-        confianca: float,
-        cor: Tuple[int, int, int],
-    ) -> None:
+
+
+    def _desenhar_caixa_anotada(self,img: np.ndarray,x1: int,y1: int,x2: int,y2: int,rotulo: str,confianca: float,cor: Tuple[int, int, int] ):
+
         """
         Desenha uma caixa delimitadora elegante com OpenCV contendo tarja de identificação.
         """
+
         # Caixa delimitadora
         cv2.rectangle(img, (x1, y1), (x2, y2), cor, 2, cv2.LINE_AA)
 
@@ -177,6 +181,8 @@ class BotImagem(BotTelegram):
             cv2.LINE_AA,
         )
 
+
+
     def _desenhar_cabecalho_estatisticas(
         self,
         img: np.ndarray,
@@ -207,15 +213,23 @@ class BotImagem(BotTelegram):
             cv2.LINE_AA,
         )
 
+
+
+
     # -------------------------------------------------------------------------
     # Implementação Polimórfica: processar_imagem
     # -------------------------------------------------------------------------
 
-    async def processar_imagem(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+
+
+    async def processar_imagem(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """
         Sobrescreve polimorficamente o método 'processar_imagem' da classe base.
         Baixa a foto recebida pelo Telegram, processa via YOLO + OpenCV e envia a resposta.
         """
+        
         msg = update.message
         if not msg:
             return
@@ -238,10 +252,12 @@ class BotImagem(BotTelegram):
             await arquivo_telegram.download_to_memory(buffer_bytes)
             buffer_bytes.seek(0)
 
-            # Decodifica imagem para matriz OpenCV
-            array_np = np.frombuffer(buffer_bytes.getvalue(), dtype=np.uint8)
-            imagem_bgr = cv2.imdecode(array_np, cv2.IMREAD_COLOR)
 
+            # Decodifica imagem para matriz OpenCV
+            array_np = np.frombuffer(buffer_bytes.getvalue(), dtype=np.uint8)        # frombuffer: transforma os bytes em um array NumPy de inteiros de 8 bits.
+            imagem_bgr = cv2.imdecode(array_np, cv2.IMREAD_COLOR)                    # imdecode: decodifica esses bytes (JPEG, PNG...) em uma matriz de pixels colorida (BGR). Devolve None se falhar, por isso o teste seguinte.
+
+ 
             if imagem_bgr is None:
                 await status_msg.edit_text("❌ Falha ao decodificar os pixels da imagem.")
                 return
@@ -251,11 +267,12 @@ class BotImagem(BotTelegram):
 
             # Converte a imagem anotada de volta para JPEG
             sucesso, buffer_codificado = cv2.imencode(".jpg", imagem_anotada, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
+
             if not sucesso:
                 await status_msg.edit_text("❌ Erro ao codificar imagem resultante.")
                 return
 
-            foto_para_envio = io.BytesIO(buffer_codificado.tobytes())
+            foto_para_envio = io.BytesIO(buffer_codificado.tobytes())        # Cria um arquivo virtual e dá um nome a ele (o Telegram precisa disso para reconhecer o formato).
             foto_para_envio.name = "deteccao_yolo.jpg"
 
             # Formata o relatório textual
@@ -264,21 +281,27 @@ class BotImagem(BotTelegram):
             # Deleta a mensagem de status temporária
             await status_msg.delete()
 
-            # Envia a foto anotada com a legenda
+            # Envia a foto anotada com a legenda gerado em markdown
             await msg.reply_photo(
                 photo=foto_para_envio,
                 caption=legenda,
                 parse_mode="Markdown",
             )
 
+
         except Exception as erro:
             logger.exception("Erro durante o processamento da imagem: %s", erro)
             await status_msg.edit_text(f"❌ Ocorreu um erro ao processar a imagem:\n`{str(erro)}`", parse_mode="Markdown")
 
-    def _formatar_relatorio_markdown(self, relatorio: Dict[str, Any]) -> str:
+
+
+
+    def _formatar_relatorio_markdown(self, relatorio: Dict[str, Any]):
+
         """
         Gera um resumo formatado em Markdown com contagens e métricas da inferência.
         """
+
         total = relatorio["total_objetos"]
         tempo = relatorio["tempo_inferencia_ms"]
         classes = relatorio["contagem_classes"]
@@ -309,6 +332,10 @@ class BotImagem(BotTelegram):
 
         return "\n".join(linhas)
 
+
+
+
+
     def processar_imagem_local(self, caminho_arquivo: str) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
         Método utilitário para testes locais offline.
@@ -322,3 +349,32 @@ class BotImagem(BotTelegram):
             raise ValueError(f"Não foi possível abrir a imagem: {caminho_arquivo}")
         
         return self.detectar_e_anotar(img)
+
+
+
+
+
+'''
+Usuário envia uma foto
+        │
+        ▼
+despachar_mensagem() → tipo = "imagem"
+        │
+        ▼
+processar_imagem()  ◄── versão do BotImagem (polimorfismo)
+        ├─ responde "Analisando..."
+        ├─ baixa a maior resolução → bytes
+        ├─ cv2.imdecode → matriz BGR
+        ▼
+detectar_e_anotar()
+        ├─ YOLO.predict() → caixas, classes, confianças
+        ├─ _desenhar_caixa_anotada() (cada objeto)
+        └─ _desenhar_cabecalho_estatisticas()
+        ▼
+cv2.imencode → JPEG
+        ▼
+_formatar_relatorio_markdown()
+        ▼
+apaga o status e envia foto + legenda
+
+'''

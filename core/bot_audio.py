@@ -5,6 +5,7 @@ conversão de áudio, Speech-to-Text e classificação semântica/sentimento do 
 """
 
 from __future__ import annotations
+from filelock import asyncio
 import io
 import logging
 import os
@@ -271,11 +272,13 @@ class BotAudio(BotTelegram):
 
 
 
-    async def processar_audio(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def processar_audio(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """
         Sobrescreve polimorficamente o método 'processar_audio' da classe base.
         Baixa a mensagem de voz ou arquivo de áudio do Telegram, transcreve e classifica o conteúdo.
         """
+        
         msg = update.message
         if not msg:
             return
@@ -293,6 +296,8 @@ class BotAudio(BotTelegram):
                     formato = "mp3"
                 elif arquivo_info.mime_type and "wav" in arquivo_info.mime_type:
                     formato = "wav"
+                elif arquivo_info.mime_type and "m4a" in arquivo_info.mime_type:
+                    formato = "m4a"
                 else:
                     formato = "ogg"
             elif msg.document and msg.document.mime_type and msg.document.mime_type.startswith("audio/"):
@@ -302,13 +307,18 @@ class BotAudio(BotTelegram):
                 await status_msg.edit_text("❌ Nenhum payload de áudio válido encontrado.")
                 return
 
-            arquivo_telegram = await context.bot.get_file(arquivo_info.file_id)
-            buffer_bytes = io.BytesIO()
-            await arquivo_telegram.download_to_memory(buffer_bytes)
-            bytes_audio = buffer_bytes.getvalue()
 
+            arquivo_telegram = await context.bot.get_file(arquivo_info.file_id)      # Pede ao Telegram os dados do arquivo pelo file_id
+            buffer_bytes = io.BytesIO()
+            await arquivo_telegram.download_to_memory(buffer_bytes)                  # Baixa direto para a memória (sem salvar em disco).
+            bytes_audio = buffer_bytes.getvalue()                                    # Pega o conteúdo binário bruto.
+
+
+            # Inicia o pipeline de processamento
             resultado = self.processar_audio_completo(bytes_audio, formato_origem=formato)
 
+
+            # Verifica se a transcrição foi bem-sucedida
             if not resultado["sucesso"]:
                 await status_msg.edit_text(
                     "⚠️ *Não foi possível transcrever a fala com clareza.*\n\n"
@@ -329,10 +339,12 @@ class BotAudio(BotTelegram):
 
 
 
-    def _formatar_relatorio_audio_markdown(self, resultado: Dict[str, Any]) -> str:
+    def _formatar_relatorio_audio_markdown(self, resultado: Dict[str, Any]):
+
         """
         Gera relatório estilizado em Markdown com transcrição e classificações do áudio.
         """
+
         transcricao = resultado["transcricao"]
         duracao = resultado["duracao_segundos"]
         tempo_ms = resultado["tempo_processamento_ms"]
@@ -364,11 +376,14 @@ class BotAudio(BotTelegram):
 
 
 
-    def processar_audio_local(self, caminho_arquivo: str) -> Dict[str, Any]:
+
+    def processar_audio_local(self, caminho_arquivo: str):
+
         """
         Método utilitário para testes locais offline.
         Lê um arquivo de áudio do sistema e executa o pipeline.
         """
+
         if not os.path.exists(caminho_arquivo):
             raise FileNotFoundError(f"Arquivo de áudio não encontrado: {caminho_arquivo}")
 
@@ -379,3 +394,28 @@ class BotAudio(BotTelegram):
             bytes_audio = f.read()
 
         return self.processar_audio_completo(bytes_audio, formato_origem=formato)
+
+
+
+
+'''
+Usuário envia mensagem de voz
+        │
+        ▼
+despachar_mensagem() (BotTelegram) → tipo = "audio"
+        │
+        ▼
+processar_audio()  ◄── versão do BotAudio (polimorfismo)
+        ├─ responde "Transcrevendo..."
+        ├─ baixa o áudio para a memória
+        ▼
+processar_audio_completo()
+        ├─ converter_para_wav()   → OGG → WAV mono 16kHz
+        ├─ transcrever_audio_wav() → Google Speech API
+        └─ ClassificadorTextoAudio.classificar()
+        ▼
+_formatar_relatorio_audio_markdown()
+        ▼
+edita a mensagem com o relatório final
+
+'''

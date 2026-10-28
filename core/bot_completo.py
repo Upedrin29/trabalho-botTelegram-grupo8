@@ -17,6 +17,7 @@ logger = logging.getLogger("BotMultimodal")
 
 
 class BotMultimodal(BotImagem, BotAudio):
+
     """
     Classe unificada que herda de BotImagem e BotAudio.
     
@@ -30,14 +31,8 @@ class BotMultimodal(BotImagem, BotAudio):
        estritamente encapsulados na raiz da hierarquia em BotTelegram.
     """
 
-    def __init__(
-        self,
-        token: Optional[str] = None,
-        modelo_yolo: str = "yolov8n.pt",
-        confianca_minima: float = 0.25,
-        idioma_reconhecimento: str = "pt-BR",
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self,token: Optional[str] = None,modelo_yolo: str = "yolov8n.pt",confianca_minima: float = 0.25,idioma_reconhecimento: str = "pt-BR",**kwargs: Any,):
+
         """
         Inicializa o Bot Multimodal combinando Visão Computacional e Reconhecimento de Fala.
         
@@ -46,7 +41,9 @@ class BotMultimodal(BotImagem, BotAudio):
         :param confianca_minima: Limiar de confiança do detector YOLO.
         :param idioma_reconhecimento: Idioma para transcrição de áudio (padrão: 'pt-BR').
         """
+
         logger.info("Inicializando BotMultimodal com herança múltipla cooperativa...")
+
         super().__init__(
             token=token,
             modelo_yolo=modelo_yolo,
@@ -54,14 +51,21 @@ class BotMultimodal(BotImagem, BotAudio):
             idioma_reconhecimento=idioma_reconhecimento,
             **kwargs,
         )
+
         logger.info("BotMultimodal pronto para operar!")
+
+
 
     # -------------------------------------------------------------------------
     # Extensões e Novos Recursos Criativos
     # -------------------------------------------------------------------------
 
-    async def comando_vision(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+
+    async def comando_vision(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """Comando /vision: Detalha o modelo de Visão Computacional e classes detectáveis."""
+
         mensagem = (
             "👁️ *Central de Visão Computacional (YOLOv8 & OpenCV)*\n\n"
             f"• **Modelo Ativo:** `{self._modelo_yolo_nome}`\n"
@@ -79,8 +83,12 @@ class BotMultimodal(BotImagem, BotAudio):
         )
         await update.message.reply_text(mensagem, parse_mode="Markdown")
 
-    async def comando_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+
+    async def comando_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """Comando /voice: Detalha o motor de Áudio, Speech-to-Text e Classificador NLP."""
+
         mensagem = (
             "🎙️ *Central de Reconhecimento de Fala & NLP*\n\n"
             f"• **Idioma Ativo:** `{self._idioma}`\n"
@@ -96,9 +104,14 @@ class BotMultimodal(BotImagem, BotAudio):
         )
         await update.message.reply_text(mensagem, parse_mode="Markdown")
 
-    async def comando_about(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+
+    async def comando_about(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
         """Comando /about: Detalhes da arquitetura de Programação Orientada a Objetos."""
+
         mro_classes = [c.__name__ for c in self.__class__.__mro__ if c.__name__ not in ("object", "ABC")]
+
         mensagem = (
             "🏛️ *Arquitetura Orientada a Objetos (POO):*\n\n"
             "1. **Herança e Hierarquia de Classes:**\n"
@@ -118,7 +131,10 @@ class BotMultimodal(BotImagem, BotAudio):
         )
         await update.message.reply_text(mensagem, parse_mode="Markdown")
 
-    def registrar_handlers(self, app: Application) -> None:
+
+
+    def registrar_handlers(self, app: Application):
+
         """
         Sobrescreve o registro de handlers para incluir os comandos criativos adicionais.
         """
@@ -126,3 +142,29 @@ class BotMultimodal(BotImagem, BotAudio):
         app.add_handler(CommandHandler("vision", self.comando_vision))
         app.add_handler(CommandHandler("voice", self.comando_voice))
         app.add_handler(CommandHandler("about", self.comando_about))
+
+
+
+
+
+'''
+python bot.py --mode multimodal
+        │
+        ▼
+ BotMultimodal(token, modelo_yolo, confianca_minima, idioma)
+        │  super() → BotImagem (carrega YOLO)
+        │  super() → BotAudio (cria o reconhecedor)
+        │  super() → BotTelegram (guarda o token encapsulado)
+        ▼
+ iniciar() (da BotTelegram)
+        │  construir_aplicacao()
+        │  registrar_handlers()  ◄── versão do BotMultimodal (+ /vision /voice /about)
+        ▼
+ run_polling()
+        │
+        ▼
+ foto  → despachar_mensagem → BotImagem.processar_imagem
+ voz   → despachar_mensagem → BotAudio.processar_audio
+ texto → despachar_mensagem → BotTelegram.processar_texto
+
+ '''
