@@ -5,13 +5,15 @@ conversão de áudio, Speech-to-Text e classificação semântica/sentimento do 
 """
 
 from __future__ import annotations
-from filelock import asyncio
+import asyncio
 import io
 import logging
 import os
 import re
+import subprocess
 import tempfile
 import time
+import wave
 from typing import Optional, Dict, Any, Tuple
 import imageio_ffmpeg
 from pydub import AudioSegment
@@ -21,8 +23,14 @@ from telegram.ext import ContextTypes
 
 from .bot_base import BotTelegram
 
-# Configura o executável do ffmpeg para o pydub automaticamente (roda uma vez)
-AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+# Configura o executável do ffmpeg para o pydub e para o processo
+FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+AudioSegment.converter = FFMPEG_EXE
+
+# Garante que o diretório do FFmpeg esteja no PATH do sistema
+_ffmpeg_dir = os.path.dirname(FFMPEG_EXE)
+if _ffmpeg_dir not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _ffmpeg_dir + os.pathsep + os.environ.get("PATH", "")
 
 
 logger = logging.getLogger("BotAudio")
@@ -173,28 +181,69 @@ class BotAudio(BotTelegram):
 
         """
         Converte dados de áudio em bytes (ex: OGG Opus do Telegram) para um arquivo WAV temporário.
+        Utiliza o executável FFmpeg diretamente para converter qualquer codec/contêiner para WAV mono 16kHz,
+        eliminando a dependência do ffprobe no Windows e garantindo compatibilidade total com áudios do Telegram.
         
         :param bytes_audio: Conteúdo binário do áudio.
         :param formato_origem: Extensão do formato de origem (ex: 'ogg', 'mp3', 'm4a').
         :return: Tupla com (caminho_arquivo_wav, duracao_segundos).
         """
 
-        # Os bytes baixados do Telegram são embrulhados em um “arquivo virtual” na memória e carregados pelo pydub, informando o formato de origem.
-        buffer_entrada = io.BytesIO(bytes_audio)
-        segmento = AudioSegment.from_file(buffer_entrada, format=formato_origem)
-        
-        # Converte para canal mono, 16kHz (padrão ideal para Speech-to-Text)
-        segmento = segmento.set_channels(1).set_frame_rate(16000)
-        duracao_seg = float(len(segmento)) / 1000.0
+        caminho_in = None
+        caminho_wav = None
+        try:
+            # Salva os bytes recebidos em um arquivo temporário com a extensão de origem
+            ext = (formato_origem or "ogg").lstrip(".").lower()
+            with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as f_in:
+                f_in.write(bytes_audio)
+                caminho_in = f_in.name
 
-        arquivo_temp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        caminho_wav = arquivo_temp.name
-        arquivo_temp.close()
+            # Cria arquivo temporário de destino para o WAV
+            arquivo_wav = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            caminho_wav = arquivo_wav.name
+            arquivo_wav.close()
 
-        segmento.export(caminho_wav, format="wav")
+            # Executa conversão via FFmpeg diretamente: 1 canal (mono), taxa 16kHz
+            cmd = [
+                FFMPEG_EXE,
+                "-y",
+                "-i", caminho_in,
+                "-ac", "1",
+                "-ar", "16000",
+                caminho_wav,
+            ]
+            resultado_proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
 
+            if resultado_proc.returncode != 0:
+                erro_detalhe = resultado_proc.stderr.decode("utf-8", errors="ignore")
+                logger.error("FFmpeg falhou ao converter áudio: %s", erro_detalhe)
+                raise RuntimeError(f"Falha na conversão de áudio via FFmpeg: {erro_detalhe[-200:]}")
 
-        return caminho_wav, duracao_seg
+            # Lê a duração exata do WAV gerado através do módulo nativo wave
+            with wave.open(caminho_wav, "rb") as wf:
+                duracao_seg = float(wf.getnframes()) / float(wf.getframerate())
+
+            return caminho_wav, duracao_seg
+
+        except Exception as e:
+            if caminho_wav and os.path.exists(caminho_wav):
+                try:
+                    os.remove(caminho_wav)
+                except OSError:
+                    pass
+            raise e
+
+        finally:
+            if caminho_in and os.path.exists(caminho_in):
+                try:
+                    os.remove(caminho_in)
+                except OSError:
+                    pass
 
 
 
@@ -302,7 +351,14 @@ class BotAudio(BotTelegram):
                     formato = "ogg"
             elif msg.document and msg.document.mime_type and msg.document.mime_type.startswith("audio/"):
                 arquivo_info = msg.document
-                formato = "ogg"
+                if arquivo_info.file_name and "." in arquivo_info.file_name:
+                    formato = arquivo_info.file_name.rsplit(".", 1)[-1].lower()
+                elif "mp3" in arquivo_info.mime_type:
+                    formato = "mp3"
+                elif "wav" in arquivo_info.mime_type:
+                    formato = "wav"
+                else:
+                    formato = "ogg"
             else:
                 await status_msg.edit_text("❌ Nenhum payload de áudio válido encontrado.")
                 return
@@ -314,8 +370,10 @@ class BotAudio(BotTelegram):
             bytes_audio = buffer_bytes.getvalue()                                    # Pega o conteúdo binário bruto.
 
 
-            # Inicia o pipeline de processamento
-            resultado = self.processar_audio_completo(bytes_audio, formato_origem=formato)
+
+            # Inicia o pipeline de processamento em thread separada para não bloquear o loop assíncrono
+            # O bot continua responsivo para outros comandos enquanto a fala é transcrita.
+            resultado = await asyncio.to_thread(self.processar_audio_completo, bytes_audio, formato)
 
 
             # Verifica se a transcrição foi bem-sucedida
@@ -331,11 +389,16 @@ class BotAudio(BotTelegram):
                 return
 
             resposta_md = self._formatar_relatorio_audio_markdown(resultado)
-            await status_msg.edit_text(resposta_md, parse_mode="Markdown")
+            try:
+                await status_msg.edit_text(resposta_md, parse_mode="Markdown")
+            except Exception:
+                # Fallback caso a transcrição contenha caracteres que interfiram no Markdown
+                await status_msg.edit_text(resposta_md)
+
 
         except Exception as erro:
             logger.exception("Erro durante o processamento de áudio: %s", erro)
-            await status_msg.edit_text(f"❌ Ocorreu um erro ao processar o áudio:\n`{str(erro)}`", parse_mode="Markdown")
+            await status_msg.edit_text(f"❌ Ocorreu um erro ao processar o áudio:\n{str(erro)}")
 
 
 

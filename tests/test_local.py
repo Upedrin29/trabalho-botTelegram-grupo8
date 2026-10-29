@@ -29,9 +29,11 @@ from core.bot_audio import ClassificadorTextoAudio
 
 
 class TestePOOEEncapsulamento(unittest.TestCase):
+    
     """Testes dos princípios de Programação Orientada a Objetos."""
 
     TOKEN_TESTE = "1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ"
+
 
     def test_encapsulamento_token_privado(self):
         """Valida que o token da API está encapsulado e protegido contra acesso acidental."""
@@ -48,6 +50,7 @@ class TestePOOEEncapsulamento(unittest.TestCase):
         self.assertIn("...", mascarado)
         self.assertNotIn("ABCdefGHIjklMNOpqr", mascarado)
 
+
     def test_validacao_token_invalido(self):
         """Valida que inicialização sem token dispara exceção informativa."""
         # Limpa temporariamente variável de ambiente se existir
@@ -62,6 +65,7 @@ class TestePOOEEncapsulamento(unittest.TestCase):
             if env_original is not None:
                 os.environ["TELEGRAM_BOT_TOKEN"] = env_original
 
+
     def test_hierarquia_e_heranca(self):
         """Valida a árvore de herança e especialização de classes."""
         self.assertTrue(issubclass(BotImagem, BotTelegram))
@@ -72,12 +76,14 @@ class TestePOOEEncapsulamento(unittest.TestCase):
 
 
 class TesteVisaoComputacionalYOLO(unittest.TestCase):
+
     """Testes do modelo YOLOv8 e integração com OpenCV."""
 
     @classmethod
     def setUpClass(cls):
         """Instancia o BotImagem uma única vez para os testes de visão."""
         cls.bot_img = BotImagem(token="123456:FAKE_TOKEN_PARA_TESTE", modelo_yolo="yolov8n.pt")
+
 
     def test_inferencia_e_anotacao_opencv(self):
         """Testa o processamento de uma imagem com OpenCV e inferência com YOLOv8."""
@@ -102,6 +108,7 @@ class TesteVisaoComputacionalYOLO(unittest.TestCase):
         self.assertGreater(relatorio["tempo_inferencia_ms"], 0.0)
         self.assertEqual(relatorio["resolucao"], f"{largura}x{altura}")
 
+
     def test_imagem_com_objeto_real(self):
         """Valida que o YOLOv8 carrega pesos COCO e é capaz de detectar classes reais."""
         # Baixa ou usa a imagem sintética com verificação de formato
@@ -113,6 +120,7 @@ class TesteVisaoComputacionalYOLO(unittest.TestCase):
 
 
 class TesteAudioENLP(unittest.TestCase):
+
     """Testes do Classificador de Texto de Áudio e conversor de áudio."""
 
     def test_classificador_sentimento_positivo(self):
@@ -125,6 +133,7 @@ class TesteAudioENLP(unittest.TestCase):
         self.assertIn("Agradecimento", res["categoria_intencao"])
         self.assertGreater(res["ritmo_fala_wpm"], 0)
 
+
     def test_classificador_sentimento_negativo(self):
         """Valida detecção de sentimento negativo e intenção de suporte/erro."""
         texto = "Estou com um erro gravíssimo, o sistema quebrou e travou tudo, péssimo!"
@@ -134,12 +143,14 @@ class TesteAudioENLP(unittest.TestCase):
         self.assertLess(res["polaridade_score"], 0)
         self.assertIn("Suporte", res["categoria_intencao"])
 
+
     def test_classificador_duvida_pergunta(self):
         """Valida detecção de pergunta."""
         texto = "Como posso atualizar meus dados cadastrais?"
         res = ClassificadorTextoAudio.classificar(texto, duracao_segundos=3.0)
 
         self.assertIn("Pergunta", res["categoria_intencao"])
+
 
     def test_conversao_audio_sintetico(self):
         """Gera um arquivo de áudio WAV sintético e valida o pipeline de carregamento."""
@@ -175,8 +186,29 @@ class TesteAudioENLP(unittest.TestCase):
                 os.remove(caminho_wav)
 
 
+
+    def test_conversao_audio_ogg_telegram(self):
+        """Valida que mensagens de voz em OGG (padrão Telegram) são convertidas para WAV com sucesso."""
+        from pydub.generators import Sine
+        bot_audio = BotAudio(token="123456:FAKE_TOKEN_PARA_TESTE")
+
+        buf_ogg = io.BytesIO()
+        Sine(440).to_audio_segment(duration=1000).export(buf_ogg, format="ogg")
+        bytes_ogg = buf_ogg.getvalue()
+
+        caminho_wav, duracao = bot_audio.converter_para_wav(bytes_ogg, formato_origem="ogg")
+        try:
+            self.assertTrue(os.path.exists(caminho_wav))
+            self.assertAlmostEqual(duracao, 1.0, delta=0.2)
+        finally:
+            if os.path.exists(caminho_wav):
+                os.remove(caminho_wav)
+
+
 class TestePolimorfismoDespacho(unittest.TestCase):
+
     """Testes da identificação dinâmica de tipos de mensagens."""
+
 
     def test_reconhecimento_tipos(self):
         """Valida a lógica polimórfica de reconhecimento de mensagens."""
